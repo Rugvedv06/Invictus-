@@ -61,6 +61,9 @@ const PCBProductionEntry = () => {
     const [componentCheck, setComponentCheck] = useState([]);
     const [canProduce, setCanProduce] = useState(false);
 
+    const hasValidQuantity = Number.parseInt(productionData.quantity_produced, 10) > 0;
+    const hasMappedComponents = pcbComponents.length > 0;
+
     useEffect(() => {
         dispatch(fetchPCBs());
         dispatch(fetchProductions());
@@ -84,6 +87,8 @@ const PCBProductionEntry = () => {
     useEffect(() => {
         if (pcbComponents.length > 0 && productionData.quantity_produced) {
             checkComponentAvailability();
+        } else {
+            setCanProduce(false);
         }
     }, [pcbComponents, productionData.quantity_produced]);
 
@@ -310,6 +315,15 @@ const PCBProductionEntry = () => {
                             </Grid>
 
                             {/* Component Availability Check */}
+                            {selectedPCB && hasValidQuantity && !hasMappedComponents && (
+                                <Grid item xs={12}>
+                                    <Alert severity="warning">
+                                        This PCB has no component mapping (BOM). Add components in PCB Management
+                                        before creating a production entry.
+                                    </Alert>
+                                </Grid>
+                            )}
+
                             {componentCheck.length > 0 && (
                                 <Grid item xs={12}>
                                     <Card variant="outlined">
@@ -372,7 +386,7 @@ const PCBProductionEntry = () => {
                         <Button
                             type="submit"
                             variant="contained"
-                            disabled={loading || !canProduce || !selectedPCB}
+                            disabled={loading || !selectedPCB || !hasValidQuantity || !canProduce}
                         >
                             Create Production Entry
                         </Button>

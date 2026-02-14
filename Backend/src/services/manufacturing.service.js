@@ -259,7 +259,7 @@ export const deletePCB = async (id) => {
 
 export const listPCBComponents = async (pcbId) => {
   const result = await query(
-    `SELECT pc.*, c.component_name, c.part_number
+    `SELECT pc.*, c.component_name, c.part_number, c.current_stock_quantity
      FROM pcb_components pc
      JOIN components c ON c.id = pc.component_id
      WHERE pc.pcb_id = $1

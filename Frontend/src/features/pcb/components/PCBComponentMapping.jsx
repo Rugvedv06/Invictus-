@@ -38,7 +38,7 @@ import { getAllInventory } from '../../inventory/inventorySlice';
 const PCBComponentMapping = ({ pcb }) => {
     const dispatch = useDispatch();
     const { pcbComponents, loading, error, success } = useSelector((state) => state.pcbs);
-    const { inventory } = useSelector((state) => state.inventory);
+    const { items } = useSelector((state) => state.inventory);
 
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedComponent, setSelectedComponent] = useState(null);
@@ -106,7 +106,7 @@ const PCBComponentMapping = ({ pcb }) => {
         }
     };
 
-    const availableComponents = inventory.filter(
+    const availableComponents = (items || []).filter(
         (comp) => !pcbComponents.find((pcbComp) => pcbComp.component_id === comp.id)
     );
 
@@ -233,7 +233,7 @@ const PCBComponentMapping = ({ pcb }) => {
                                 <Autocomplete
                                     options={availableComponents}
                                     getOptionLabel={(option) =>
-                                        `${option.part_number} - ${option.component_name} (Stock: ${option.current_stock_quantity || 0})`
+                                        `${option.partNumber || option.part_number || ''} - ${option.name || option.component_name || ''} (Stock: ${option.stock ?? option.current_stock_quantity ?? 0})`
                                     }
                                     value={selectedComponent}
                                     onChange={(e, newValue) => setSelectedComponent(newValue)}
@@ -249,11 +249,11 @@ const PCBComponentMapping = ({ pcb }) => {
                                         <Box component="li" {...props}>
                                             <Box>
                                                 <Typography variant="body2">
-                                                    <strong>{option.part_number}</strong> - {option.component_name}
+                                                    <strong>{option.partNumber || option.part_number}</strong> - {option.name || option.component_name}
                                                 </Typography>
                                                 <Typography variant="caption" color="textSecondary">
-                                                    Stock: {option.current_stock_quantity || 0} |
-                                                    Required/month: {option.monthly_required_quantity || 0}
+                                                    Stock: {option.stock ?? option.current_stock_quantity ?? 0} |
+                                                    Required/month: {option.monthlyRequired ?? option.monthly_required_quantity ?? 0}
                                                 </Typography>
                                             </Box>
                                         </Box>
