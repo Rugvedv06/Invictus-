@@ -1,0 +1,231 @@
+[dotenv@17.2.3] injecting env (13) from .env -- tip: ???? encrypt with Dotenvx: https://dotenvx.com
+--- INSPECTING TRIGGERS ---
+[
+  {
+    "table": "components",
+    "trigger_name": "check_component_low_stock",
+    "event": "INSERT",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  },
+  {
+    "table": "components",
+    "trigger_name": "check_component_low_stock",
+    "event": "UPDATE",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  },
+  {
+    "table": "components",
+    "trigger_name": "update_components_updated_at",
+    "event": "UPDATE",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  },
+  {
+    "table": "pcb_components",
+    "trigger_name": "update_pcb_components_updated_at",
+    "event": "UPDATE",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  },
+  {
+    "table": "pcb_production",
+    "trigger_name": "deduct_stock_on_production",
+    "event": "INSERT",
+    "orientation": "ROW",
+    "timing": "AFTER"
+  },
+  {
+    "table": "pcbs",
+    "trigger_name": "update_pcbs_updated_at",
+    "event": "UPDATE",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  },
+  {
+    "table": "users",
+    "trigger_name": "update_users_updated_at",
+    "event": "UPDATE",
+    "orientation": "ROW",
+    "timing": "BEFORE"
+  }
+]
+--- INSPECTING FUNCTIONS ---
+FUNCTION: uuid_nil
+CREATE OR REPLACE FUNCTION public.uuid_nil()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_nil$function$
+
+-----------------------------------
+FUNCTION: uuid_ns_dns
+CREATE OR REPLACE FUNCTION public.uuid_ns_dns()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_dns$function$
+
+-----------------------------------
+FUNCTION: uuid_ns_url
+CREATE OR REPLACE FUNCTION public.uuid_ns_url()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_url$function$
+
+-----------------------------------
+FUNCTION: uuid_ns_oid
+CREATE OR REPLACE FUNCTION public.uuid_ns_oid()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_oid$function$
+
+-----------------------------------
+FUNCTION: uuid_ns_x500
+CREATE OR REPLACE FUNCTION public.uuid_ns_x500()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_x500$function$
+
+-----------------------------------
+FUNCTION: uuid_generate_v1
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1$function$
+
+-----------------------------------
+FUNCTION: uuid_generate_v1mc
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1mc()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1mc$function$
+
+-----------------------------------
+FUNCTION: uuid_generate_v3
+CREATE OR REPLACE FUNCTION public.uuid_generate_v3(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v3$function$
+
+-----------------------------------
+FUNCTION: uuid_generate_v4
+CREATE OR REPLACE FUNCTION public.uuid_generate_v4()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v4$function$
+
+-----------------------------------
+FUNCTION: uuid_generate_v5
+CREATE OR REPLACE FUNCTION public.uuid_generate_v5(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v5$function$
+
+-----------------------------------
+FUNCTION: update_updated_at_column
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$function$
+
+-----------------------------------
+FUNCTION: check_low_stock
+CREATE OR REPLACE FUNCTION public.check_low_stock()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- Calculate if component is low stock (< 20% of monthly requirement)
+    IF NEW.monthly_required_quantity > 0 THEN
+        NEW.is_low_stock := (NEW.current_stock_quantity < (NEW.monthly_required_quantity * 0.2));
+        
+        -- Create procurement trigger if stock is low and wasn't low before
+        IF NEW.is_low_stock = true AND (OLD IS NULL OR OLD.is_low_stock = false) THEN
+            INSERT INTO procurement_triggers (
+                component_id,
+                current_stock,
+                required_quantity,
+                threshold_percentage,
+                status
+            ) VALUES (
+                NEW.id,
+                NEW.current_stock_quantity,
+                NEW.monthly_required_quantity,
+                20.00,
+                'pending'
+            );
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$
+
+-----------------------------------
+FUNCTION: deduct_component_stock
+CREATE OR REPLACE FUNCTION public.deduct_component_stock()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    component_record RECORD;
+    total_quantity INTEGER;
+BEGIN
+    -- Loop through all components for this PCB
+    FOR component_record IN
+        SELECT pc.component_id, pc.quantity_per_pcb, c.current_stock_quantity, c.component_name
+        FROM pcb_components pc
+        JOIN components c ON pc.component_id = c.id
+        WHERE pc.pcb_id = NEW.pcb_id
+    LOOP
+        total_quantity := component_record.quantity_per_pcb * NEW.quantity_produced;
+        
+        -- Check if sufficient stock is available
+        IF component_record.current_stock_quantity < total_quantity THEN
+            RAISE EXCEPTION 'Insufficient stock for component %. Required: %, Available: %',
+                component_record.component_name,
+                total_quantity,
+                component_record.current_stock_quantity;
+        END IF;
+        
+        -- Deduct stock
+        UPDATE components
+        SET current_stock_quantity = current_stock_quantity - total_quantity
+        WHERE id = component_record.component_id;
+        
+        -- Record consumption
+        INSERT INTO component_consumption (
+            component_id,
+            pcb_production_id,
+            quantity_consumed,
+            transaction_type,
+            consumption_date
+        ) VALUES (
+            component_record.component_id,
+            NEW.id,
+            total_quantity,
+            'production',
+            CURRENT_TIMESTAMP
+        );
+    END LOOP;
+    
+    RETURN NEW;
+END;
+$function$
+
+-----------------------------------

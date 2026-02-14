@@ -10,17 +10,23 @@ export const getDashboardStats = async () => {
   ]);
 
   return {
-    total_components: components.rows[0].count,
-    low_stock_components: lowStock.rows[0].count,
-    active_pcbs: pcbs.rows[0].count,
-    total_production_quantity: productions.rows[0].total,
-    pending_procurement_triggers: pendingProcurement.rows[0].count,
+    total_components: Number(components.rows[0].count),
+    low_stock_components: Number(lowStock.rows[0].count),
+    active_pcbs: Number(pcbs.rows[0].count),
+    total_production_quantity: Number(productions.rows[0].total),
+    pending_procurement_triggers: Number(pendingProcurement.rows[0].count),
   };
 };
 
 export const getComponentConsumptionSummary = async () => {
   const result = await query('SELECT * FROM v_component_consumption_summary ORDER BY total_consumed DESC');
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    total_consumed: Number(row.total_consumed),
+    stock_percentage: Number(row.stock_percentage),
+    current_stock_quantity: Number(row.current_stock_quantity),
+    monthly_required_quantity: Number(row.monthly_required_quantity),
+  }));
 };
 
 export const getTopConsumedComponents = async () => {
@@ -38,15 +44,30 @@ export const getTopConsumedComponents = async () => {
      GROUP BY c.id, c.component_name, c.part_number, c.current_stock_quantity, c.is_low_stock
      ORDER BY total_consumed DESC`
   );
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    total_consumed: Number(row.total_consumed),
+    consumption_days: Number(row.consumption_days),
+    avg_consumption_per_transaction: Number(row.avg_consumption_per_transaction),
+    current_stock_quantity: Number(row.current_stock_quantity),
+  }));
 };
 
 export const getLowStockComponentsView = async () => {
   const result = await query('SELECT * FROM v_low_stock_components');
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    current_stock_quantity: Number(row.current_stock_quantity),
+    monthly_required_quantity: Number(row.monthly_required_quantity),
+    stock_percentage: Number(row.stock_percentage),
+  }));
 };
 
 export const getPCBProductionSummary = async () => {
   const result = await query('SELECT * FROM v_pcb_production_summary ORDER BY total_quantity_produced DESC NULLS LAST');
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    total_productions: Number(row.total_productions),
+    total_quantity_produced: Number(row.total_quantity_produced),
+  }));
 };

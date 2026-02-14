@@ -10,6 +10,7 @@ export const mockInventory = [
     supplier: 'ABC Electronics',
     location: 'Shelf A-1',
     lastUpdated: '2024-02-10',
+    createdAt: '2024-01-15',
     reorderLevel: 200,
   },
   {
@@ -23,6 +24,7 @@ export const mockInventory = [
     supplier: 'XYZ Components',
     location: 'Shelf B-3',
     lastUpdated: '2024-02-12',
+    createdAt: '2024-01-20',
     reorderLevel: 400,
   },
   {
@@ -36,6 +38,7 @@ export const mockInventory = [
     supplier: 'Tech Distributors',
     location: 'Shelf C-2',
     lastUpdated: '2024-02-13',
+    createdAt: '2024-01-25',
     reorderLevel: 100,
   },
   {
@@ -49,6 +52,7 @@ export const mockInventory = [
     supplier: 'Light Components Inc',
     location: 'Shelf D-1',
     lastUpdated: '2024-02-11',
+    createdAt: '2024-01-18',
     reorderLevel: 160,
   },
   {
@@ -62,6 +66,7 @@ export const mockInventory = [
     supplier: 'Board Manufacturers Ltd',
     location: 'Shelf E-4',
     lastUpdated: '2024-02-09',
+    createdAt: '2024-01-10',
     reorderLevel: 300,
   },
   {
@@ -75,6 +80,7 @@ export const mockInventory = [
     supplier: 'ABC Electronics',
     location: 'Shelf A-2',
     lastUpdated: '2024-02-14',
+    createdAt: '2024-01-30',
     reorderLevel: 120,
   },
   {
@@ -88,6 +94,7 @@ export const mockInventory = [
     supplier: 'XYZ Components',
     location: 'Shelf B-4',
     lastUpdated: '2024-02-12',
+    createdAt: '2024-01-22',
     reorderLevel: 300,
   },
   {
@@ -101,6 +108,7 @@ export const mockInventory = [
     supplier: 'Frequency Components',
     location: 'Shelf F-1',
     lastUpdated: '2024-02-10',
+    createdAt: '2024-01-12',
     reorderLevel: 80,
   },
 ];

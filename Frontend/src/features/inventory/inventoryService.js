@@ -11,6 +11,7 @@ const toUiItem = (item) => ({
   supplier: '',
   location: '',
   reorderLevel: item.reorder_threshold ?? 0,
+  createdAt: item.created_at,
   lastUpdated: item.updated_at || item.created_at,
 });
 

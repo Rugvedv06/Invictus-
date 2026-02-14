@@ -58,9 +58,9 @@ const Inventory = () => {
     return filterData(items, debouncedSearch, [
       'name',
       'partNumber',
-      'category',
+      'unit',
       'supplier',
-      'location',
+      'createdAt',
     ]);
   }, [items, debouncedSearch]);
 
