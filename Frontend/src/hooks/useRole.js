@@ -4,8 +4,8 @@ import { ROLES, ROLE_PERMISSIONS } from '../constants';
 export const useRole = () => {
   const { user } = useSelector((state) => state.auth);
 
-  const isAdmin = user?.role === ROLES.ADMIN;
-  const isEmployee = user?.role === ROLES.EMPLOYEE;
+  const isAdmin = user?.role === ROLES.ADMIN || user?.role === 'admin' || user?.role === 'Admin';
+  const isEmployee = user?.role === ROLES.EMPLOYEE || user?.role === 'employee' || user?.role === 'Employee';
 
   const hasPermission = (permission) => {
     if (!user) return false;
