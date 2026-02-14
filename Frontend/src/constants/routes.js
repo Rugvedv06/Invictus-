@@ -3,6 +3,8 @@ export const ROUTES = {
   DASHBOARD: '/',
   INVENTORY: '/inventory',
   EMPLOYEES: '/employees',
+  PCBS: '/pcbs',
+  PRODUCTION: '/production',
   NOT_FOUND: '*',
 };
 

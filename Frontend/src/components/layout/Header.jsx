@@ -1,4 +1,4 @@
-import { LogOut, User, LayoutDashboard, Package, Users } from 'lucide-react';
+import { LogOut, User, LayoutDashboard, Package, Users, Cpu, Factory } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth, useRole } from '../../hooks';
 import { APP_CONFIG, ROUTES } from '../../constants';
@@ -36,6 +36,26 @@ const Header = () => {
               >
                 <Package size={18} />
                 Inventory
+              </NavLink>
+              <NavLink
+                to={ROUTES.PCBS}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-secondary-600 hover:text-primary'
+                  }`
+                }
+              >
+                <Cpu size={18} />
+                PCBs
+              </NavLink>
+              <NavLink
+                to={ROUTES.PRODUCTION}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-secondary-600 hover:text-primary'
+                  }`
+                }
+              >
+                <Factory size={18} />
+                Production
               </NavLink>
               {isAdmin && (
                 <NavLink

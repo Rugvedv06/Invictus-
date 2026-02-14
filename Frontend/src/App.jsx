@@ -5,6 +5,8 @@ import Login from './features/auth/Login';
 import Dashboard from './features/dashboard/Dashboard';
 import Inventory from './features/inventory/Inventory';
 import Employees from './features/employees/Employees';
+import PCBManagement from './features/pcb/PCBManagement';
+import PCBProductionEntry from './features/pcb/PCBProductionEntry';
 import { ROUTES, ROLES } from './constants';
 
 function App() {
@@ -43,6 +45,28 @@ function App() {
                 <Employees />
               </Layout>
             </RoleBasedRoute>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.PCBS}
+        element={
+          <PrivateRoute>
+            <Layout>
+              <PCBManagement />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.PRODUCTION}
+        element={
+          <PrivateRoute>
+            <Layout>
+              <PCBProductionEntry />
+            </Layout>
           </PrivateRoute>
         }
       />
