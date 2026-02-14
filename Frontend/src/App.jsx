@@ -63,7 +63,7 @@ function App() {
       />
 
       <Route
-        path={ROUTES.PRODUCTION}
+        path={ROUTES.PCB_PRODUCTION}
         element={
           <PrivateRoute>
             <Layout>

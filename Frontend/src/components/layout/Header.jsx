@@ -48,7 +48,7 @@ const Header = () => {
                 PCBs
               </NavLink>
               <NavLink
-                to={ROUTES.PRODUCTION}
+                to={ROUTES.PCB_PRODUCTION}
                 className={({ isActive }) =>
                   `flex items-center gap-2 text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-secondary-600 hover:text-primary'
                   }`
