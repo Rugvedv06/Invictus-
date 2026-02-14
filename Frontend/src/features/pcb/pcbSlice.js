@@ -92,10 +92,10 @@ export const addComponentToPCB = createAsyncThunk(
 
 export const removePCBComponent = createAsyncThunk(
     'pcbs/removeComponent',
-    async ({ pcbId, componentId }, { rejectWithValue }) => {
+    async ({ pcbId, componentId, mappingId }, { rejectWithValue }) => {
         try {
             await pcbService.removePCBComponent(pcbId, componentId);
-            return componentId;
+            return { componentId, mappingId };
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -257,8 +257,9 @@ const pcbSlice = createSlice({
             })
             .addCase(removePCBComponent.fulfilled, (state, action) => {
                 state.loading = false;
+                const { componentId, mappingId } = action.payload;
                 state.pcbComponents = state.pcbComponents.filter(
-                    comp => comp.id !== action.payload
+                    comp => comp.id !== mappingId && comp.component_id !== componentId
                 );
                 state.success = true;
             })

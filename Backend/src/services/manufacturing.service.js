@@ -284,10 +284,17 @@ export const upsertPCBComponent = async (pcbId, payload) => {
 };
 
 export const removePCBComponent = async (pcbId, componentId) => {
-  const result = await query(
-    'DELETE FROM pcb_components WHERE pcb_id = $1 AND component_id = $2 RETURNING id',
+  let result = await query(
+    'DELETE FROM pcb_components WHERE pcb_id = $1 AND component_id = $2 RETURNING id, component_id',
     [pcbId, componentId]
   );
+
+  if (!result.rowCount) {
+    result = await query(
+      'DELETE FROM pcb_components WHERE pcb_id = $1 AND id = $2 RETURNING id, component_id',
+      [pcbId, componentId]
+    );
+  }
 
   if (!result.rowCount) {
     const error = new Error('PCB component mapping not found');

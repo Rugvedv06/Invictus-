@@ -100,7 +100,8 @@ const PCBComponentMapping = ({ pcb }) => {
             dispatch(
                 removePCBComponent({
                     pcbId: pcb.id,
-                    componentId: component.id,
+                    componentId: component.component_id || component.id,
+                    mappingId: component.id,
                 })
             );
         }
@@ -245,8 +246,10 @@ const PCBComponentMapping = ({ pcb }) => {
                                             helperText="Search by part number or component name"
                                         />
                                     )}
-                                    renderOption={(props, option) => (
-                                        <Box component="li" {...props}>
+                                    renderOption={(props, option) => {
+                                        const { key, ...restProps } = props;
+                                        return (
+                                        <Box component="li" key={key} {...restProps}>
                                             <Box>
                                                 <Typography variant="body2">
                                                     <strong>{option.partNumber || option.part_number}</strong> - {option.name || option.component_name}
@@ -257,7 +260,8 @@ const PCBComponentMapping = ({ pcb }) => {
                                                 </Typography>
                                             </Box>
                                         </Box>
-                                    )}
+                                        );
+                                    }}
                                 />
                             </Grid>
                             <Grid item xs={12}>
