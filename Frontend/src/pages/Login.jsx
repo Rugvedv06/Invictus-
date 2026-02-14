@@ -54,13 +54,13 @@ const Login = () => {
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div>
-            <h2 className="text-3xl font-display font-bold" style={{ color: 'var(--text)' }}>
+            <h2 className="text-3xl font-display font-bold text-[var(--text)]">
               Welcome back
             </h2>
-            <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-2 text-sm text-muted">
               Don't have an account?{' '}
-              <Link to="/signup" style={{ textDecoration: 'none' }}>
-                <span className="font-medium" style={{ color: 'var(--primary-500)' }}>
+              <Link to="/signup" className="no-underline">
+                <span className="font-medium text-primary-500">
                   Sign up
                 </span>
               </Link>
@@ -88,7 +88,7 @@ const Login = () => {
                   required
                   slotProps={{
                     input: {
-                      startAdornment: <Mail size={20} style={{ marginRight: 8 }} />,
+                      startAdornment: <Mail size={20} className="mr-2" />,
                     },
                   }}
                 />
@@ -105,7 +105,7 @@ const Login = () => {
                   required
                   slotProps={{
                     input: {
-                      startAdornment: <Lock size={20} style={{ marginRight: 8 }} />,
+                      startAdornment: <Lock size={20} className="mr-2" />,
                     },
                   }}
                 />
@@ -116,8 +116,8 @@ const Login = () => {
                     label="Remember me"
                   />
 
-                  <Link to="#" style={{ textDecoration: 'none' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--primary-500)' }}>
+                  <Link to="#" className="no-underline">
+                    <span className="text-sm font-medium text-primary-500">
                       Forgot password?
                     </span>
                   </Link>
@@ -141,17 +141,17 @@ const Login = () => {
 
       {/* Right side - Image/Brand */}
       <div className="hidden lg:block relative w-0 flex-1">
-        <div className="absolute inset-0 bg-linear-to-br from-primary-600 to-primary-800">
+        <div className="absolute inset-0 bg-linear-to-br from-primary-500 to-primary-700">
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute inset-0 flex items-center justify-center p-12">
-            <div style={{ textAlign: 'center', color: 'white' }}>
-              <Link to="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+            <div className="text-center text-white">
+              <Link to="/" className="flex items-center justify-center gap-3 mb-8">
                 <Logo />
               </Link>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 700, marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-4xl font-bold mb-4 font-display">
                 Join AppName
               </h2>
-              <p style={{ fontSize: '1.25rem', color: 'var(--primary-100)', maxWidth: '28rem' }}>
+              <p className="text-xl text-primary-100 max-w-md">
                 Lorem ipsum dolor sit amet consectetur adipisicing elit.
               </p>
             </div>

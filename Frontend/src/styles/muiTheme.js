@@ -4,27 +4,25 @@ import { createTheme } from "@mui/material/styles";
 // Tailwind-inspired colors
 const colors = {
   primary: {
-    50: "#eff6ff",
-    100: "#dbeafe",
-    200: "#bfdbfe",
-    300: "#93c5fd",
-    400: "#60a5fa",
-    500: "#3b82f6",
-    600: "#2563eb",
-    700: "#1d4ed8",
-    800: "#1e40af",
-    900: "#1e3a8a",
+    50: "#caf0f8",
+    100: "#90e0ef",
+    // 200, 300 not defined in index.css, interpolating or omitting
+    300: "#48cae4", // Interpolated/Approximate for MUI 'light' prop if needed
+    500: "#0077b6",
+    // 600 not defined
+    700: "#03045e",
+    // 800, 900 not defined
   },
   secondary: {
     50: "#f8fafc",
     100: "#f1f5f9",
     200: "#e2e8f0",
     300: "#cbd5e1",
-    400: "#94a3b8",
-    500: "#64748b",
+    // 400, 500 not defined in index.css
+    500: "#64748b", // Kept for MUI mapping
     600: "#475569",
-    700: "#334155",
-    800: "#1e293b",
+    // 700, 800 not defined
+    700: "#334155", // Kept for MUI 'dark' mapping
     900: "#0f172a",
   },
   success: {
