@@ -5,6 +5,10 @@ import Login from './features/auth/Login';
 import Dashboard from './features/dashboard/Dashboard';
 import Inventory from './features/inventory/Inventory';
 import Employees from './features/employees/Employees';
+import PCBManagement from './features/pcb/PCBManagement';
+import PCBProductionEntry from './features/pcb/PCBProductionEntry';
+import AnalyticsDashboard from './features/analytics/AnalyticsDashboard';
+import ExcelImportExport from './features/analytics/ExcelImportExport';
 import { ROUTES, ROLES } from './constants';
 
 function App() {
@@ -41,6 +45,54 @@ function App() {
             <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
               <Layout>
                 <Employees />
+              </Layout>
+            </RoleBasedRoute>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.PCBS}
+        element={
+          <PrivateRoute>
+            <Layout>
+              <PCBManagement />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.PCB_PRODUCTION}
+        element={
+          <PrivateRoute>
+            <Layout>
+              <PCBProductionEntry />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.ANALYTICS}
+        element={
+          <PrivateRoute>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
+              <Layout>
+                <AnalyticsDashboard />
+              </Layout>
+            </RoleBasedRoute>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.IMPORT_EXPORT}
+        element={
+          <PrivateRoute>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
+              <Layout>
+                <ExcelImportExport />
               </Layout>
             </RoleBasedRoute>
           </PrivateRoute>
