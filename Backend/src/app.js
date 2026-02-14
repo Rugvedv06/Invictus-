@@ -10,6 +10,7 @@ import productionRoutes from './routes/production.route.js';
 import procurementRoutes from './routes/procurement.route.js';
 import dashboardRoutes from './routes/dashboard.route.js';
 import importRoutes from './routes/import.route.js';
+import exportRoutes from './routes/export.route.js';
 import { errorHandler, notFound } from './middlewares/addHere.js';
 
 const app = express();
@@ -35,7 +36,8 @@ app.use('/api/pcbs', pcbRoutes);
 app.use('/api/production', productionRoutes);
 app.use('/api/procurement', procurementRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/import-logs', importRoutes);
+app.use('/api/import', importRoutes);
+app.use('/api/export', exportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
