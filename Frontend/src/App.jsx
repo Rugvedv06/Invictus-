@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout';
 import { PrivateRoute, RoleBasedRoute } from './routes';
+import LandingPage from './features/landing/LandingPage';
 import Login from './features/auth/Login';
 import Dashboard from './features/dashboard/Dashboard';
 import Inventory from './features/inventory/Inventory';
@@ -14,6 +15,7 @@ import { ROUTES, ROLES } from './constants';
 function App() {
   return (
     <Routes>
+      <Route path={ROUTES.HOME} element={<LandingPage />} />
       <Route path={ROUTES.LOGIN} element={<Login />} />
 
       <Route
