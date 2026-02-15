@@ -21,9 +21,27 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, thunkAPI) => {
     try {
-      const data = await authService.login(credentials.email, credentials.password);
+      const data = await authService.login(credentials);
       storage.set(APP_CONFIG.TOKEN_KEY, data.token);
       storage.set(APP_CONFIG.USER_KEY, data.user);
+      return data;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Something went wrong';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// Register user
+export const register = createAsyncThunk(
+  'auth/register',
+  async (payload, thunkAPI) => {
+    try {
+      const data = await authService.register(payload);
+      // do not auto-login; user should explicitly login
       return data;
     } catch (error) {
       const message =
@@ -109,6 +127,20 @@ export const authSlice = createSlice({
         state.message = action.payload;
         state.user = null;
         state.token = null;
+      })
+      // Register
+      .addCase(register.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        // backend returns created user (not logged in) - do not set token
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       })
       // Logout
       .addCase(logout.pending, (state) => {

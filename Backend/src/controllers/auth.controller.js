@@ -12,12 +12,12 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-	const { email, password } = req.body;
-	if (!email || !password) {
-		return res.status(400).json({ message: 'email and password are required' });
+	const { email, password, role } = req.body;
+	if (!email || !password || !role) {
+		return res.status(400).json({ message: 'email, password and role are required' });
 	}
 
-	const result = await authService.login({ email, password });
+	const result = await authService.login({ email, password, role });
 	return res.status(200).json(result);
 };
 

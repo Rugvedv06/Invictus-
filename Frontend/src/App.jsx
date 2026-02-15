@@ -3,6 +3,7 @@ import { Layout } from './components/layout';
 import { PrivateRoute, RoleBasedRoute } from './routes';
 import LandingPage from './features/landing/LandingPage';
 import Login from './features/auth/Login';
+import Signup from './features/auth/Signup';
 import Dashboard from './features/dashboard/Dashboard';
 import Inventory from './features/inventory/Inventory';
 import Employees from './features/employees/Employees';
@@ -17,6 +18,7 @@ function App() {
     <Routes>
       <Route path={ROUTES.HOME} element={<LandingPage />} />
       <Route path={ROUTES.LOGIN} element={<Login />} />
+      <Route path={ROUTES.SIGNUP} element={<Signup />} />
 
       <Route
         path={ROUTES.DASHBOARD}
