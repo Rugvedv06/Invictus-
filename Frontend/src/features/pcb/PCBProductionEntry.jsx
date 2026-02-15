@@ -31,16 +31,20 @@ import {
     Add as AddIcon,
     Warning as WarningIcon,
     CheckCircle as CheckCircleIcon,
+    Print as PrintIcon,
 } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
     fetchPCBs,
     fetchPCBComponents,
     createProduction,
     fetchProductions,
+    fetchProductionConsumption,
     clearError,
     clearSuccess,
 } from './pcbSlice';
+import ProductionBill from './components/ProductionBill';
 
 const PCBProductionEntry = () => {
     const dispatch = useDispatch();
@@ -60,6 +64,9 @@ const PCBProductionEntry = () => {
     });
     const [componentCheck, setComponentCheck] = useState([]);
     const [canProduce, setCanProduce] = useState(false);
+    const [lastCreatedProduction, setLastCreatedProduction] = useState(null);
+    const [printDialogOpen, setPrintDialogOpen] = useState(false);
+    const [printingProduction, setPrintingProduction] = useState(null);
 
     const hasValidQuantity = Number.parseInt(productionData.quantity_produced, 10) > 0;
     const hasMappedComponents = pcbComponents.length > 0;
@@ -77,12 +84,42 @@ const PCBProductionEntry = () => {
 
     useEffect(() => {
         if (success) {
+            const lastProd = productions[0];
+            if (openDialog && lastProd) {
+                setLastCreatedProduction(lastProd);
+            }
             setOpenDialog(false);
             resetForm();
             dispatch(fetchProductions());
-            setTimeout(() => dispatch(clearSuccess()), 3000);
+            setTimeout(() => {
+                dispatch(clearSuccess());
+                setLastCreatedProduction(null);
+            }, 6000);
         }
-    }, [success, dispatch]);
+    }, [success, dispatch, productions, openDialog]);
+
+    const handlePrintRequest = async (production) => {
+        setPrintingProduction(production);
+        await dispatch(fetchProductionConsumption(production.id));
+        setPrintDialogOpen(true);
+    };
+
+    const handlePrintAction = () => {
+        const printContent = document.getElementById('printable-bill-area');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Bill</title>');
+        // Copy MUI styles if possible, or just use basic styles for print
+        printWindow.document.write('<style>body { font-family: sans-serif; } @media print { .no-print { display: none; } }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(printContent.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    };
 
     useEffect(() => {
         if (pcbComponents.length > 0 && productionData.quantity_produced) {
@@ -190,6 +227,23 @@ const PCBProductionEntry = () => {
                 />
             ),
         },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 100,
+            sortable: false,
+            renderCell: (params) => (
+                <Tooltip title="Print Bill">
+                    <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handlePrintRequest(params.row)}
+                    >
+                        <PrintIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            ),
+        },
     ];
 
     return (
@@ -212,7 +266,23 @@ const PCBProductionEntry = () => {
             )}
 
             {success && (
-                <Alert severity="success" sx={{ mb: 2 }} onClose={() => dispatch(clearSuccess())}>
+                <Alert
+                    severity="success"
+                    sx={{ mb: 2 }}
+                    onClose={() => dispatch(clearSuccess())}
+                    action={
+                        lastCreatedProduction && (
+                            <Button
+                                color="inherit"
+                                size="small"
+                                startIcon={<PrintIcon />}
+                                onClick={() => handlePrintRequest(lastCreatedProduction)}
+                            >
+                                Print Bill
+                            </Button>
+                        )
+                    }
+                >
                     Production entry created successfully! Components deducted from stock.
                 </Alert>
             )}
@@ -392,6 +462,36 @@ const PCBProductionEntry = () => {
                         </Button>
                     </DialogActions>
                 </form>
+            </Dialog>
+
+            {/* Print Preview Dialog */}
+            <Dialog
+                open={printDialogOpen}
+                onClose={() => setPrintDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Print Preview
+                    <Button
+                        variant="contained"
+                        startIcon={<PrintIcon />}
+                        onClick={handlePrintAction}
+                    >
+                        Print Now
+                    </Button>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box id="printable-bill-area">
+                        <ProductionBill
+                            production={printingProduction}
+                            consumption={useSelector((state) => state.pcbs.currentProductionConsumption)}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPrintDialogOpen(false)}>Close</Button>
+                </DialogActions>
             </Dialog>
         </Box>
     );

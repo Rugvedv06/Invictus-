@@ -26,7 +26,7 @@ router.post(
 router.get(
   '/consumption',
   asyncHandler(async (req, res) => {
-    const rows = await listConsumption();
+    const rows = await listConsumption({ productionId: req.query.productionId });
     res.status(200).json(rows);
   })
 );
