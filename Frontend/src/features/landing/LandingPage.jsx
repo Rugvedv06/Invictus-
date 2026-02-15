@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '../../components/ui';
-import { ROUTES } from '../../constants';
+import { ROUTES, APP_CONFIG } from '../../constants';
+import { storage } from '../../utils/storage';
 import { Footer } from '../../components/ui/Footer';
 import { GlowEffect } from '../../components/ui/GlowEffect';
 import DashboardImage from '../../assets/Dashboard.png';
@@ -23,6 +24,23 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     const handleLogin = () => navigate(ROUTES.LOGIN);
+
+    const handleGetStarted = () => {
+        const token = storage.get(APP_CONFIG.TOKEN_KEY);
+        const user = storage.get(APP_CONFIG.USER_KEY);
+        if (token) {
+            // already authenticated -> dashboard
+            navigate(ROUTES.DASHBOARD);
+            return;
+        }
+        if (user) {
+            // user exists locally but not logged in -> go to login
+            navigate(ROUTES.LOGIN);
+            return;
+        }
+        // new user -> signup
+        navigate(ROUTES.SIGNUP);
+    };
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -119,7 +137,7 @@ const LandingPage = () => {
                         </motion.p>
 
                         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button onClick={handleLogin} className="px-8 py-4 text-lg bg-primary-500 hover:bg-primary-700 shadow-lg shadow-primary-700/20">
+                            <Button onClick={handleGetStarted} className="px-8 py-4 text-lg bg-primary-500 hover:bg-primary-700 shadow-lg shadow-primary-700/20">
                                 Get Started Now
                             </Button>
                         </motion.div>

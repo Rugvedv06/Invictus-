@@ -1,45 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input, Button, Alert } from '../../components/ui';
-import { useAuth } from '../../hooks';
+import { useDispatch, useSelector } from 'react-redux';
+import { register, reset } from './authSlice';
 import { ROUTES, APP_CONFIG } from '../../constants';
-import { LogIn } from 'lucide-react';
 
-const Login = () => {
+const Signup = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    full_name: '',
     role: 'employee',
   });
-  const [showError, setShowError] = useState(false);
 
-  const { login, isLoading, isError, message, isAuthenticated } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isLoading, isError, isSuccess, message } = useSelector((s) => s.auth);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(ROUTES.DASHBOARD);
+    if (isSuccess) {
+      // after successful signup, reset state and go to login
+      dispatch(reset());
+      navigate(ROUTES.LOGIN);
     }
-  }, [isAuthenticated, navigate]);
-
-  useEffect(() => {
-    if (isError) {
-      setShowError(true);
-      const timer = setTimeout(() => setShowError(false), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isError]);
+  }, [isSuccess, dispatch, navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(formData);
+    await dispatch(register(formData));
   };
 
   return (
@@ -47,22 +39,24 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">
-              {APP_CONFIG.APP_NAME}
-            </h1>
-            <p className="text-gray-600">Sign in to your account</p>
+            <h1 className="text-2xl font-bold text-primary mb-2">Create an account</h1>
+            <p className="text-gray-600">Sign up and then sign in with your credentials</p>
           </div>
 
-          {showError && (
-            <Alert
-              type="error"
-              message={message}
-              onClose={() => setShowError(false)}
-              className="mb-4"
-            />
+          {isError && (
+            <Alert type="error" message={message} className="mb-4" />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Full name"
+              name="full_name"
+              value={formData.full_name}
+              onChange={handleChange}
+              placeholder="Your full name"
+              required
+            />
+
             <Input
               label="Email"
               type="email"
@@ -84,7 +78,7 @@ const Login = () => {
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sign in as</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
               <div className="flex items-center gap-4">
                 <label className="inline-flex items-center">
                   <input
@@ -112,29 +106,13 @@ const Login = () => {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                'Signing in...'
-              ) : (
-                <>
-                  <LogIn size={20} />
-                  Sign In
-                </>
-              )}
+            <Button type="submit" variant="primary" disabled={isLoading} className="w-full">
+              {isLoading ? 'Creating...' : 'Create account'}
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-semibold text-gray-700 mb-2">Demo Credentials:</p>
-            <div className="space-y-1 text-sm text-gray-600">
-              <p><strong>Admin:</strong> admin@electrolyte.com / admin123</p>
-              <p><strong>Employee:</strong> employee@electrolyte.com / employee123</p>
-            </div>
+          <div className="mt-4 text-center text-sm text-gray-600">
+            Already have an account? <a href={ROUTES.LOGIN} className="text-primary font-medium">Sign in</a>
           </div>
         </div>
       </div>
@@ -142,4 +120,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

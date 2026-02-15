@@ -1,8 +1,9 @@
 import api from '../../services/api';
 
 class AuthService {
-  async login(email, password) {
-    const response = await api.post('/auth/login', { email, password });
+  async login(credentials) {
+    // credentials should be { email, password, role }
+    const response = await api.post('/auth/login', credentials);
     return response.data;
   }
   
@@ -18,6 +19,12 @@ class AuthService {
   
   async getCurrentUser() {
     const response = await api.get('/auth/me');
+    return response.data;
+  }
+
+  async register(payload) {
+    // payload: { email, password, full_name, role }
+    const response = await api.post('/auth/register', payload);
     return response.data;
   }
 }

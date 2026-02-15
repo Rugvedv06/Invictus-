@@ -45,7 +45,7 @@ export const register = async ({ email, password, full_name, role = 'admin' }) =
 	};
 };
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password, role }) => {
 	const result = await query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
 
 	if (!result.rowCount) {
@@ -66,6 +66,16 @@ export const login = async ({ email, password }) => {
 		const error = new Error('Invalid credentials');
 		error.status = 401;
 		throw error;
+	}
+
+	// enforce role match if provided
+	if (role) {
+		const requested = normalizeRole(role);
+		if (requested !== normalizeRole(user.role)) {
+			const error = new Error('Role mismatch: incorrect role for this account');
+			error.status = 403;
+			throw error;
+		}
 	}
 
 	return {
