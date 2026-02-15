@@ -355,7 +355,42 @@ export const listConsumption = async () => {
   return result.rows;
 };
 
+export const generateProcurementTriggers = async () => {
+  // Identify components that meet the procurement trigger criteria:
+  // 1. Current stock is less than 20% of monthly requirement
+  // 2. Monthly requirement is greater than 0
+  // 3. No active (pending or ordered) procurement trigger exists for this component
+  await query(`
+    INSERT INTO procurement_triggers (
+      component_id, 
+      current_stock, 
+      required_quantity, 
+      threshold_percentage, 
+      status,
+      notes
+    )
+    SELECT 
+      c.id, 
+      c.current_stock_quantity, 
+      c.monthly_required_quantity, 
+      20.00, 
+      'pending',
+      'System generated: Stock dropped below 20% of monthly requirement'
+    FROM components c
+    WHERE c.monthly_required_quantity > 0 
+      AND c.current_stock_quantity < (c.monthly_required_quantity * 0.2)
+      AND NOT EXISTS (
+        SELECT 1 
+        FROM procurement_triggers pt 
+        WHERE pt.component_id = c.id 
+          AND pt.status IN ('pending', 'ordered')
+      )
+  `);
+};
+
 export const listProcurement = async ({ status }) => {
+  // Ensure procurement triggers are up to date before listing
+  await generateProcurementTriggers();
   const values = [];
   const where = [];
 

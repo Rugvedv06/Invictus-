@@ -5,7 +5,10 @@ const ProcurementTable = ({ procurementStatus }) => {
     return (
         <div className={styles.tableCard}>
             <div className={styles.tableHeader}>
-                <h3 className={styles.tableTitle}>Procurement Triggers & Status</h3>
+                <div>
+                    <h3 className={styles.tableTitle}>Procurement Triggers & Status</h3>
+                    <p className={styles.tableSubtitle}>Automated triggers generated when stock falls below 20% of monthly requirement</p>
+                </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table className={styles.customTable}>
