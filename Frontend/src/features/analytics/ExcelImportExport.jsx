@@ -73,7 +73,7 @@ const ExcelImportExport = () => {
         formData.append('import_type', importType);
 
         try {
-            const response = await api.post('/api/import/excel', formData, {
+            const response = await api.post('/import/excel', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -96,7 +96,7 @@ const ExcelImportExport = () => {
         setError(null);
 
         try {
-            const response = await api.get(`/api/export/${exportType}`, {
+            const response = await api.get(`/export/${exportType}`, {
                 responseType: 'blob',
             });
 
