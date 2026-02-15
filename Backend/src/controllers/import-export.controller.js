@@ -1,6 +1,65 @@
 import multer from 'multer';
 import * as XLSX from 'xlsx';
-import { query, withTransaction } from '../config/db.js';
+import { query } from '../config/db.js';
+
+const normalizeRowKeys = (row) => {
+    const normalized = {};
+    for (const [key, value] of Object.entries(row || {})) {
+        normalized[String(key).trim().toLowerCase()] = value;
+    }
+    return normalized;
+};
+
+const getValue = (row, aliases) => {
+    const normalized = normalizeRowKeys(row);
+    for (const alias of aliases) {
+        const value = normalized[String(alias).trim().toLowerCase()];
+        if (value !== undefined && value !== null && value !== '') {
+            return value;
+        }
+    }
+    return null;
+};
+
+const toNumberOrDefault = (value, defaultValue = 0) => {
+    if (value === null || value === undefined || value === '') return defaultValue;
+    const parsed = Number(String(value).replace(/,/g, '').trim());
+    return Number.isFinite(parsed) ? parsed : defaultValue;
+};
+
+const toBooleanOrDefault = (value, defaultValue = true) => {
+    if (value === null || value === undefined || value === '') return defaultValue;
+    if (typeof value === 'boolean') return value;
+
+    const normalized = String(value).trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'active'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n', 'inactive'].includes(normalized)) return false;
+
+    return defaultValue;
+};
+
+const toDateString = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+
+    if (typeof value === 'number') {
+        const converted = XLSX.SSF.parse_date_code(value);
+        if (!converted) return null;
+        const month = String(converted.m).padStart(2, '0');
+        const day = String(converted.d).padStart(2, '0');
+        return `${converted.y}-${month}-${day}`;
+    }
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value.toISOString().slice(0, 10);
+    }
+
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().slice(0, 10);
+    }
+
+    return null;
+};
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -39,7 +98,7 @@ export const importExcel = async (req, res) => {
         const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        const data = XLSX.utils.sheet_to_json(worksheet, { defval: null, raw: true });
 
         if (!data || data.length === 0) {
             return res.status(400).json({ message: 'Excel file is empty' });
@@ -48,6 +107,8 @@ export const importExcel = async (req, res) => {
         let result;
         if (import_type === 'components') {
             result = await importComponents(data, req.user.id);
+        } else if (import_type === 'pcb_master_bom') {
+            result = await importPCBMasterWithBOM(data, req.user.id);
         } else if (import_type === 'pcb_production') {
             result = await importPCBProduction(data, req.user.id);
         } else {
@@ -96,13 +157,31 @@ const importComponents = async (data, userId) => {
         const row = data[i];
         try {
             // Validate required fields
-            const componentName = row['Component Name'] || row['component_name'];
-            const partNumber = row['Part Number'] || row['part_number'];
-            const currentStock = row['Current Stock Quantity'] || row['current_stock_quantity'];
-            const monthlyRequired = row['Monthly Required Quantity'] || row['monthly_required_quantity'];
+            const componentName = getValue(row, ['Component Name', 'component_name']);
+            const partNumber = getValue(row, ['Part Number', 'part_number']);
+            const currentStock = toNumberOrDefault(
+                getValue(row, [
+                    'Current Stock Quantity',
+                    'current_stock_quantity',
+                    'Current Stock',
+                    'current_stock',
+                ])
+            );
+            const monthlyRequired = toNumberOrDefault(
+                getValue(row, [
+                    'Monthly Required Quantity',
+                    'monthly_required_quantity',
+                    'Monthly Required',
+                    'monthly_required',
+                ])
+            );
 
             if (!componentName || !partNumber) {
                 throw new Error('Missing required fields: Component Name and Part Number');
+            }
+
+            if (currentStock < 0 || monthlyRequired < 0) {
+                throw new Error('Quantity fields cannot be negative');
             }
 
             // Check if component exists
@@ -120,10 +199,10 @@ const importComponents = async (data, userId) => {
           WHERE part_number = $6`,
                     [
                         componentName,
-                        currentStock || 0,
-                        monthlyRequired || 0,
-                        row['Description'] || row['description'] || null,
-                        row['Unit of Measurement'] || row['unit_of_measurement'] || 'pcs',
+                        currentStock,
+                        monthlyRequired,
+                        getValue(row, ['Description', 'description']) || null,
+                        getValue(row, ['Unit of Measurement', 'unit_of_measurement']) || 'pcs',
                         partNumber,
                     ]
                 );
@@ -142,10 +221,10 @@ const importComponents = async (data, userId) => {
                     [
                         componentName,
                         partNumber,
-                        row['Description'] || row['description'] || null,
-                        currentStock || 0,
-                        monthlyRequired || 0,
-                        row['Unit of Measurement'] || row['unit_of_measurement'] || 'pcs',
+                        getValue(row, ['Description', 'description']) || null,
+                        currentStock,
+                        monthlyRequired,
+                        getValue(row, ['Unit of Measurement', 'unit_of_measurement']) || 'pcs',
                         userId,
                     ]
                 );
@@ -161,28 +240,230 @@ const importComponents = async (data, userId) => {
     return results;
 };
 
+const importPCBMasterWithBOM = async (data, userId) => {
+    const results = { success: 0, failed: 0, errors: [] };
+
+    const componentResult = await query('SELECT id, part_number FROM components');
+    const componentMap = new Map(
+        componentResult.rows.map((row) => [String(row.part_number || '').trim().toLowerCase(), row.id])
+    );
+
+    const pcbResult = await query('SELECT id, pcb_code FROM pcbs');
+    const pcbMap = new Map(
+        pcbResult.rows.map((row) => [String(row.pcb_code || '').trim().toLowerCase(), row.id])
+    );
+
+    for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        try {
+            const rawPcbCode = getValue(row, ['PCB Code', 'pcb_code']);
+            const rawPcbName = getValue(row, ['PCB Name', 'pcb_name']);
+            const rawPartNumber = getValue(row, [
+                'Component Part Number',
+                'component_part_number',
+                'Part Number',
+                'part_number',
+            ]);
+            const quantityPerPcb = toNumberOrDefault(
+                getValue(row, [
+                    'Quantity Per PCB',
+                    'quantity_per_pcb',
+                    'Qty Per PCB',
+                    'qty_per_pcb',
+                ]),
+                NaN
+            );
+
+            const pcbCode = rawPcbCode ? String(rawPcbCode).trim() : '';
+            const pcbName = rawPcbName ? String(rawPcbName).trim() : '';
+            const componentPartNumber = rawPartNumber ? String(rawPartNumber).trim() : '';
+
+            if (!pcbCode || !pcbName || !componentPartNumber || !Number.isFinite(quantityPerPcb)) {
+                throw new Error(
+                    'Missing required fields: PCB Code, PCB Name, Component Part Number, Quantity Per PCB'
+                );
+            }
+
+            if (quantityPerPcb <= 0) {
+                throw new Error('Quantity Per PCB must be greater than 0');
+            }
+
+            let pcbId = pcbMap.get(pcbCode.toLowerCase());
+
+            if (!pcbId) {
+                const insertPcb = await query(
+                    `INSERT INTO pcbs (pcb_name, pcb_code, description, version, is_active, created_by)
+                     VALUES ($1, $2, $3, $4, $5, $6)
+                     RETURNING id`,
+                    [
+                        pcbName,
+                        pcbCode,
+                        getValue(row, ['Description', 'description', 'PCB Description', 'pcb_description']) ||
+                            null,
+                        getValue(row, ['Version', 'version']) || null,
+                        toBooleanOrDefault(getValue(row, ['Is Active', 'is_active']), true),
+                        userId,
+                    ]
+                );
+
+                pcbId = insertPcb.rows[0].id;
+                pcbMap.set(pcbCode.toLowerCase(), pcbId);
+            } else {
+                await query(
+                    `UPDATE pcbs
+                     SET pcb_name = $1,
+                         description = COALESCE($2, description),
+                         version = COALESCE($3, version),
+                         is_active = COALESCE($4, is_active),
+                         updated_at = CURRENT_TIMESTAMP
+                     WHERE id = $5`,
+                    [
+                        pcbName,
+                        getValue(row, ['Description', 'description', 'PCB Description', 'pcb_description']) ||
+                            null,
+                        getValue(row, ['Version', 'version']) || null,
+                        toBooleanOrDefault(getValue(row, ['Is Active', 'is_active']), null),
+                        pcbId,
+                    ]
+                );
+            }
+
+            const componentId = componentMap.get(componentPartNumber.toLowerCase());
+            if (!componentId) {
+                throw new Error(
+                    `Component with part number ${componentPartNumber} not found. Import components first.`
+                );
+            }
+
+            await query(
+                `INSERT INTO pcb_components (pcb_id, component_id, quantity_per_pcb, notes)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (pcb_id, component_id)
+                 DO UPDATE SET quantity_per_pcb = EXCLUDED.quantity_per_pcb,
+                               notes = EXCLUDED.notes,
+                               updated_at = CURRENT_TIMESTAMP`,
+                [
+                    pcbId,
+                    componentId,
+                    quantityPerPcb,
+                    getValue(row, ['Notes', 'notes', 'BOM Notes', 'bom_notes']) || null,
+                ]
+            );
+
+            results.success++;
+        } catch (error) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: error.message });
+        }
+    }
+
+    return results;
+};
+
 const importPCBProduction = async (data, userId) => {
     const results = { success: 0, failed: 0, errors: [] };
+
+    const pcbResult = await query('SELECT id, pcb_code FROM pcbs');
+    if (pcbResult.rowCount === 0) {
+        throw new Error('No PCB master data found. Create PCB records before importing production data.');
+    }
+
+    const pcbCodeMap = new Map(
+        pcbResult.rows.map((row) => [String(row.pcb_code || '').trim().toLowerCase(), row.id])
+    );
+
+    const bomResult = await query(
+        `SELECT
+            pc.pcb_id,
+            pc.component_id,
+            pc.quantity_per_pcb,
+            c.part_number,
+            c.component_name,
+            c.current_stock_quantity
+         FROM pcb_components pc
+         JOIN components c ON c.id = pc.component_id`
+    );
+
+    if (bomResult.rowCount === 0) {
+        throw new Error(
+            'No PCB component mappings found. Map components to PCBs (BOM) before importing production data.'
+        );
+    }
+
+    const bomByPcbId = new Map();
+    const simulatedStockByComponentId = new Map();
+
+    for (const row of bomResult.rows) {
+        const pcbId = String(row.pcb_id);
+        const bomList = bomByPcbId.get(pcbId) || [];
+
+        bomList.push({
+            componentId: row.component_id,
+            qtyPerPcb: Number(row.quantity_per_pcb || 0),
+            partNumber: row.part_number,
+            componentName: row.component_name,
+        });
+
+        bomByPcbId.set(pcbId, bomList);
+        if (!simulatedStockByComponentId.has(String(row.component_id))) {
+            simulatedStockByComponentId.set(
+                String(row.component_id),
+                Number(row.current_stock_quantity || 0)
+            );
+        }
+    }
 
     for (let i = 0; i < data.length; i++) {
         const row = data[i];
         try {
             // Validate required fields
-            const pcbCode = row['PCB Code'] || row['pcb_code'];
-            const quantityProduced = row['Quantity Produced'] || row['quantity_produced'];
-            const productionDate = row['Production Date'] || row['production_date'];
+            const rawPcbCode = getValue(row, ['PCB Code', 'pcb_code']);
+            const pcbCode = rawPcbCode ? String(rawPcbCode).trim() : null;
+            const quantityProduced = toNumberOrDefault(
+                getValue(row, ['Quantity Produced', 'quantity_produced']),
+                NaN
+            );
+            const productionDate = toDateString(
+                getValue(row, ['Production Date', 'production_date'])
+            );
 
-            if (!pcbCode || !quantityProduced) {
+            if (!pcbCode || !Number.isFinite(quantityProduced)) {
                 throw new Error('Missing required fields: PCB Code and Quantity Produced');
             }
 
+            if (quantityProduced <= 0) {
+                throw new Error('Quantity Produced must be greater than 0');
+            }
+
             // Find PCB by code
-            const pcbResult = await query('SELECT id FROM pcbs WHERE pcb_code = $1', [pcbCode]);
-            if (pcbResult.rowCount === 0) {
+            const pcbId = pcbCodeMap.get(pcbCode.toLowerCase());
+            if (!pcbId) {
                 throw new Error(`PCB with code ${pcbCode} not found`);
             }
 
-            const pcbId = pcbResult.rows[0].id;
+            const bomList = bomByPcbId.get(String(pcbId)) || [];
+            if (bomList.length === 0) {
+                throw new Error(`PCB ${pcbCode} has no BOM/component mapping`);
+            }
+
+            for (const bom of bomList) {
+                const key = String(bom.componentId);
+                const available = Number(simulatedStockByComponentId.get(key) || 0);
+                const required = Number(bom.qtyPerPcb || 0) * Math.round(quantityProduced);
+
+                if (required > 0 && available < required) {
+                    throw new Error(
+                        `Insufficient stock for ${bom.partNumber || bom.componentName} while producing ${pcbCode}`
+                    );
+                }
+            }
+
+            for (const bom of bomList) {
+                const key = String(bom.componentId);
+                const available = Number(simulatedStockByComponentId.get(key) || 0);
+                const required = Number(bom.qtyPerPcb || 0) * Math.round(quantityProduced);
+                simulatedStockByComponentId.set(key, available - required);
+            }
 
             // Insert production record
             await query(
@@ -199,13 +480,13 @@ const importPCBProduction = async (data, userId) => {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                 [
                     pcbId,
-                    quantityProduced,
+                    Math.round(quantityProduced),
                     productionDate || new Date().toISOString().slice(0, 10),
-                    row['Batch Number'] || row['batch_number'] || null,
-                    row['DC Number'] || row['dc_number'] || null,
-                    row['Location'] || row['location'] || null,
-                    row['Status'] || row['status'] || 'completed',
-                    row['Notes'] || row['notes'] || null,
+                    getValue(row, ['Batch Number', 'batch_number']) || null,
+                    getValue(row, ['DC Number', 'dc_number']) || null,
+                    getValue(row, ['Location', 'location']) || null,
+                    getValue(row, ['Status', 'status']) || 'completed',
+                    getValue(row, ['Notes', 'notes']) || null,
                     userId,
                 ]
             );

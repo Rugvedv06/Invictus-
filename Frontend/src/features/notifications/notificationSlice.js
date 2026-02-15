@@ -49,6 +49,42 @@ const sendBrowserNotification = (entry, permission) => {
   }
 };
 
+const playNotificationSound = (permission) => {
+  if (typeof window === 'undefined') return;
+  if (permission !== 'granted') return;
+
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const audioContext = new AudioContextClass();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.28);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+    oscillator.onended = () => {
+      audioContext.close().catch(() => {});
+    };
+  } catch {
+    // noop: some browsers block autoplay audio until user gesture
+  }
+};
+
 export const requestBrowserPermission = createAsyncThunk(
   'notifications/requestPermission',
   async (_, thunkAPI) => {
@@ -174,6 +210,7 @@ export const pollNotifications = createAsyncThunk(
 
         const permission = state.notifications.permission;
         generated.forEach((entry) => sendBrowserNotification(entry, permission));
+        playNotificationSound(permission);
       }
 
       return {

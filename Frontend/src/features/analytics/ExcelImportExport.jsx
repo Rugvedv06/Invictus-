@@ -128,6 +128,12 @@ const ExcelImportExport = () => {
             icon: <Description color="primary" />,
         },
         {
+            type: 'pcb_master_bom',
+            title: 'PCB Master + BOM Mapping',
+            description: 'Bulk import PCB master and component-to-PCB BOM mapping in one file',
+            icon: <Assessment color="primary" />,
+        },
+        {
             type: 'pcb_production',
             title: 'PCB Production Data',
             description: 'Import production records with batch numbers and quantities',
@@ -248,6 +254,15 @@ const ExcelImportExport = () => {
                                 <ListItemText
                                     primary="Component Import"
                                     secondary="Required columns: Component Name, Part Number, Current Stock Quantity, Monthly Required Quantity"
+                                />
+                            </ListItem>
+                            <ListItem>
+                                <ListItemIcon>
+                                    <CheckCircle color="success" />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="PCB Master + BOM Import"
+                                    secondary="Required columns: PCB Code, PCB Name, Component Part Number, Quantity Per PCB"
                                 />
                             </ListItem>
                             <ListItem>
