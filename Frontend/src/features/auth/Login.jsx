@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input, Button, Alert } from '../../components/ui';
 import { useAuth } from '../../hooks';
 import { ROUTES, APP_CONFIG } from '../../constants';
@@ -127,6 +127,15 @@ const Login = () => {
                 </>
               )}
             </Button>
+
+            <div className="mt-4 text-center">
+              <span className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to={ROUTES.SIGNUP} className="text-primary hover:text-primary-dark font-semibold">
+                  Sign up
+                </Link>
+              </span>
+            </div>
           </form>
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
