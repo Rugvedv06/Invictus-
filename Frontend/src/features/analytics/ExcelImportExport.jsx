@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
+import {
+    Box,
+    Button,
+    Typography,
+    Paper,
+    Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Grid,
+    Card,
+    CardContent,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Divider,
+    CircularProgress,
+    Chip,
+} from '@mui/material';
 import {
     Upload as UploadIcon,
     Download as DownloadIcon,
+    CheckCircle,
+    Description,
+    Assessment,
 } from '@mui/icons-material';
-import { Alert } from '@mui/material';
-
 import api from '../../services/api';
-import styles from './styles/ExcelImportExport.module.css';
-
-import ImportExportHeader from './components/ImportExportHeader';
-import ActionCard from './components/ActionCard';
-import GuidelinesSection from './components/GuidelinesSection';
-import ImportModal from './components/ImportModal';
-import ExportModal from './components/ExportModal';
 
 const ExcelImportExport = () => {
-    // const dispatch = useDispatch(); // Not used in original logic, but kept in imports just in case
+    const dispatch = useDispatch();
+    const fileInputRef = useRef();
 
-    // State
     const [openImportDialog, setOpenImportDialog] = useState(false);
     const [openExportDialog, setOpenExportDialog] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -27,7 +42,6 @@ const ExcelImportExport = () => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
 
-    // Handlers
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -67,8 +81,9 @@ const ExcelImportExport = () => {
 
             setResult(response.data);
             setSelectedFile(null);
-            // File input ref reset is handled inside Modal if needed, or by causing re-render
-            setOpenImportDialog(false); // Close dialog on success
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Error importing file');
         } finally {
@@ -98,7 +113,6 @@ const ExcelImportExport = () => {
                 success: true,
                 message: `${exportType} exported successfully`,
             });
-            // setOpenExportDialog(false); // Optional: close dialog after export
         } catch (err) {
             setError(err.response?.data?.message || 'Error exporting data');
         } finally {
@@ -344,58 +358,50 @@ const ExcelImportExport = () => {
                         disabled={!selectedFile || loading}
                         startIcon={loading ? <CircularProgress size={20} /> : <UploadIcon />}
                     >
-                        {result.message}
-                        {result.records_imported > 0 && (
-                            <div style={{ marginTop: '4px', fontSize: '0.875rem' }}>
-                                Records imported: {result.records_imported}
-                                {result.records_failed > 0 && ` | Failed: ${result.records_failed}`}
-                            </div>
-                        )}
-                    </Alert>
-                )}
+                        Import
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
-                <div className={styles.cardsRow}>
-                    <ActionCard
-                        title="Import Data"
-                        description="Upload Excel files to import your component inventory or production data seamlessly."
-                        icon={<UploadIcon />}
-                        buttonText="Import from Excel"
-                        buttonVariant="primary"
-                        onClick={() => setOpenImportDialog(true)}
-                    />
-
-                    <ActionCard
-                        title="Export Data"
-                        description="Download detailed inventory, consumption, and production reports in Excel format."
-                        icon={<DownloadIcon />}
-                        buttonText="Export to Excel"
-                        buttonVariant="success"
-                        onClick={() => setOpenExportDialog(true)}
-                    />
-                </div>
-
-                <GuidelinesSection />
-
-            </div>
-
-            <ImportModal
-                open={openImportDialog}
-                onClose={() => setOpenImportDialog(false)}
-                importType={importType}
-                setImportType={setImportType}
-                selectedFile={selectedFile}
-                handleFileSelect={handleFileSelect}
-                handleImport={handleImport}
-                loading={loading}
-            />
-
-            <ExportModal
-                open={openExportDialog}
-                onClose={() => setOpenExportDialog(false)}
-                handleExport={handleExport}
-                loading={loading}
-            />
-        </div>
+            {/* Export Dialog */}
+            <Dialog open={openExportDialog} onClose={() => setOpenExportDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Export to Excel</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
+                        Select the type of data you want to export:
+                    </Typography>
+                    <Grid container spacing={2}>
+                        {exportOptions.map((option) => (
+                            <Grid item xs={12} sm={6} key={option.type}>
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom>
+                                            {option.title}
+                                        </Typography>
+                                        <Typography variant="body2" color="textSecondary" paragraph>
+                                            {option.description}
+                                        </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() => handleExport(option.type)}
+                                            disabled={loading}
+                                            fullWidth
+                                        >
+                                            Export
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenExportDialog(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 };
 
