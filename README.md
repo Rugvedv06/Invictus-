@@ -1,14 +1,20 @@
-# JR-09 – Invictus
+# **InventoryX - Inventory Automation & PCB Manufacturing Management System**
 
-**Inventory Automation & PCB Manufacturing Management System**
+InventoryX is a full-stack web application designed to automate component-level inventory management and PCB production tracking. The system ensures accurate stock deduction, low-stock detection, procurement trigger generation, and production analytics using a secure and modular architecture.
 
-Invictus is a full-stack web application designed to automate component-level inventory management and PCB production tracking. The system ensures accurate stock deduction, low-stock detection, procurement trigger generation, and production analytics using a secure and modular architecture.
+---
+
+## 🔗 Quick Links 
+
+| 🎥 Video Walkthrough | 📊 Presentation |
+|:-------------------:|:---------------:|
+| [**Watch Demo**](https://youtu.be/Nh88TpjbzCM) | [**View PPT**](https://www.canva.com/design/DAHBT0eC0mo/tGoZH59Nge2mtfBHd4MXqQ/view?utm_content=DAHBT0eC0mo&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hb0c094d03a) |
 
 ---
 
 ## 📌 Overview
 
-Invictus addresses a common manufacturing challenge: **manual stock tracking and limited visibility into component consumption.**
+InventoryX addresses a common manufacturing challenge: **manual stock tracking and limited visibility into component consumption.**
 
 The system provides:
 
@@ -33,7 +39,7 @@ The application is built using **React**, **Node.js**, **Express**, and **Postgr
 | **Database**     | PostgreSQL (UUID-based relational schema, raw SQL via `pg`)  |
 | **Auth**         | JWT (Bearer token) + bcrypt                                  |
 
-> The architecture diagram is available in the `<img src="DOCS/Simple System Architecture.png" width="400"/>`.
+<img src="DOCS/Simple System Architecture.png" width="600"/>
 
 ---
 
@@ -89,13 +95,13 @@ When stock falls below **20%** of the monthly required quantity:
 - Status lifecycle: `pending` → `ordered` → `received` / `cancelled`
 - Admin-level visibility in analytics dashboard
 
+<img src="DOCS/Deduction Logic.png" width="600"/>
+
 ---
 
-## 📊 Analytics Dashboard (Redesigned)
+## 📊 Analytics Dashboard
 
-The analytics dashboard was refactored from a monolithic component into a **modular enterprise-style interface**.
-
-**Features include:**
+The analytics dashboard includes the following features:
 
 - KPI summary cards
 - Consumption analysis (bar chart + pie chart)
@@ -104,23 +110,18 @@ The analytics dashboard was refactored from a monolithic component into a **modu
 - PCB production summary
 - Procurement status tracking
 
-**The redesign introduced:**
-
-- CSS Modules with structured layout system
-- Modular components
-- Clean tab navigation
-- Scoped styling and custom scrollbar
-
 ---
 
-## 📁 Excel Import and Export (Redesigned)
+## 📁 Excel Import and Export
 
-The Excel Import & Export module was rebuilt into a **structured data management interface**.
+The Excel Import & Export module is a **structured data management interface**.
 
 **Import:**
 
 - Component Inventory (`.xlsx`)
 - PCB Production Data
+- Component Inventory
+- PCB Master + BOM Mapping
 
 **Export:**
 
@@ -237,9 +238,9 @@ npm install
 
 ```sql
 psql -U postgres
-CREATE DATABASE invictus;
-CREATE USER invictus_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE invictus TO invictus_user;
+CREATE DATABASE inventoryx;
+CREATE USER inventoryx_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE inventoryx TO inventoryx_user;
 \q
 ```
 
@@ -247,7 +248,7 @@ GRANT ALL PRIVILEGES ON DATABASE invictus TO invictus_user;
 
 ```bash
 cd Backend
-psql -U postgres -d invictus -f schema.sql
+psql -U postgres -d inventoryx -f schema.sql
 ```
 
 ### Enable UUID Extension
@@ -267,7 +268,7 @@ PORT=5000
 
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=invictus
+DB_NAME=inventoryx
 DB_USER=postgres
 DB_PASSWORD=postgres
 
@@ -367,19 +368,19 @@ Authorization: Bearer <token>
 
 ---
 
-## 📦 Deliverables
+## 👥 Team Arjuns
 
-- ✅ Working React frontend
-- ✅ Functional Express backend
-- ✅ PostgreSQL schema
-- ✅ Automatic stock deduction
-- ✅ Low-stock procurement trigger
-- ✅ Analytics dashboard
-- ✅ Excel import/export support
-- ✅ Setup and run instructions
+| Member | Role |
+|--------|------|
+| [**Rugved Vichare**](https://github.com/Rugvedv06) | Backend, PPT & Integration |
+| [**Shreyash Singh**](https://github.com/ShreyashSingh857) | Backend, Database & Video |
+| [**Soham Raorane**](https://github.com/sohamRaorane) | UI/UX Design, Backend & Documentation |
+| [**Saman Pandey**](https://github.com/SamanPandey-in) | Frontend & Integration |
 
 ---
 
 ## 📄 License
 
 This project is licensed under the **MIT License**.
+
+**Built with ❤️ for ISTE VESIT - Invictus Hackathon by Team Arjuns**
