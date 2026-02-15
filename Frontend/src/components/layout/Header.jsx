@@ -5,10 +5,8 @@ import {
   FileSpreadsheet,
   Factory,
   LayoutDashboard,
-  LogOut,
   Package,
   Trash2,
-  User,
   Users,
   Cpu,
   BarChart2,
@@ -24,21 +22,16 @@ import {
   markNotificationRead,
   requestBrowserPermission,
 } from '../../features/notifications/notificationSlice';
+import UserProfileDropdown from './UserProfileDropdown';
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const { role, isAdmin } = useRole();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { items, unreadCount, permission } = useSelector((state) => state.notifications);
 
   const recentNotifications = useMemo(() => items.slice(0, 8), [items]);
-
-  const handleLogout = () => {
-    dispatch(clearNotifications());
-    logout();
-  };
 
   const handleOpenNotification = () => {
     setIsNotificationOpen((prev) => !prev);
@@ -235,25 +228,7 @@ const Header = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-2 px-4 py-2 bg-secondary-50 rounded-lg">
-              <User size={20} className="text-secondary-600" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-secondary-900">
-                  {user?.name}
-                </span>
-                <span className="text-xs text-secondary-500 capitalize">
-                  {role}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-secondary-700 hover:bg-secondary-100 rounded-lg transition-colors"
-            >
-              <LogOut size={20} />
-              <span className="font-medium">Logout</span>
-            </button>
+            <UserProfileDropdown />
           </div>
         </div>
       </div>
