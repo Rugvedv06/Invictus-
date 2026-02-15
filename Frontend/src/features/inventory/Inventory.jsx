@@ -6,6 +6,7 @@ import {
   createInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
+  updateStock,
   reset,
   clearError
 } from './inventorySlice';
@@ -28,6 +29,9 @@ const Inventory = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [stockEditingItem, setStockEditingItem] = useState(null);
+  const [newStock, setNewStock] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState('success');
@@ -89,6 +93,19 @@ const Inventory = () => {
   const handleEdit = (item) => {
     setEditingItem(item);
     setIsModalOpen(true);
+  };
+
+  const handleStockEdit = (item) => {
+    setStockEditingItem(item);
+    setNewStock(item.stock.toString());
+    setIsStockModalOpen(true);
+  };
+
+  const handleStockUpdate = async (e) => {
+    e.preventDefault();
+    await dispatch(updateStock({ id: stockEditingItem.id, quantity: parseInt(newStock) }));
+    setIsStockModalOpen(false);
+    setStockEditingItem(null);
   };
 
   const handleDelete = async (id) => {
@@ -163,6 +180,7 @@ const Inventory = () => {
         items={filteredItems}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onStockEdit={handleStockEdit}
       />
 
       <Modal
@@ -176,6 +194,41 @@ const Inventory = () => {
           onSubmit={editingItem ? handleUpdate : handleCreate}
           onCancel={handleCloseModal}
         />
+      </Modal>
+
+      <Modal
+        isOpen={isStockModalOpen}
+        onClose={() => setIsStockModalOpen(false)}
+        title="Update Stock Quantity"
+        size="sm"
+      >
+        <form onSubmit={handleStockUpdate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Stock Quantity ({stockEditingItem?.unit})
+            </label>
+            <input
+              type="number"
+              value={newStock}
+              onChange={(e) => setNewStock(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:ring-primary-500 focus:border-primary-500"
+              required
+              min="0"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsStockModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Update Stock
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
