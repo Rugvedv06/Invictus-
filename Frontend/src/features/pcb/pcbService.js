@@ -65,6 +65,13 @@ class PCBService {
         const response = await api.get(PCB_ENDPOINTS.PRODUCTION, { params });
         return response.data;
     }
+
+    async getProductionConsumption(productionId) {
+        const response = await api.get(`${PCB_ENDPOINTS.PRODUCTION}/consumption`, {
+            params: { productionId }
+        });
+        return response.data;
+    }
 }
 
 export default new PCBService();

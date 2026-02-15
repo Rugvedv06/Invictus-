@@ -9,6 +9,7 @@ const initialState = {
     loading: false,
     error: null,
     success: false,
+    currentProductionConsumption: [],
 };
 
 // Async thunks
@@ -118,6 +119,17 @@ export const fetchProductions = createAsyncThunk(
     async (params, { rejectWithValue }) => {
         try {
             return await pcbService.getAllProductions(params);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+export const fetchProductionConsumption = createAsyncThunk(
+    'pcbs/fetchProductionConsumption',
+    async (productionId, { rejectWithValue }) => {
+        try {
+            return await pcbService.getProductionConsumption(productionId);
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
         }
@@ -294,6 +306,20 @@ const pcbSlice = createSlice({
                 state.productions = action.payload;
             })
             .addCase(fetchProductions.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            // Fetch production consumption
+            .addCase(fetchProductionConsumption.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchProductionConsumption.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentProductionConsumption = action.payload;
+            })
+            .addCase(fetchProductionConsumption.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

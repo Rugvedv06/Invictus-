@@ -345,12 +345,22 @@ export const createProduction = async (payload, userId) => {
   return result.rows[0];
 };
 
-export const listConsumption = async () => {
+export const listConsumption = async ({ productionId } = {}) => {
+  const values = [];
+  const where = [];
+
+  if (productionId) {
+    values.push(productionId);
+    where.push(`cc.pcb_production_id = $${values.length}`);
+  }
+
   const result = await query(
     `SELECT cc.*, c.component_name, c.part_number
      FROM component_consumption cc
      JOIN components c ON c.id = cc.component_id
-     ORDER BY cc.consumption_date DESC`
+     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+     ORDER BY cc.consumption_date DESC`,
+    values
   );
   return result.rows;
 };
