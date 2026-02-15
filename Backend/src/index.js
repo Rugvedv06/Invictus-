@@ -24,3 +24,5 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Force restart to pick up .env changes
